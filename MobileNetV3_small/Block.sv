@@ -314,7 +314,17 @@ module Block #(
                 for (int h = 0; h < OUT_HEIGHT; h++) begin
                     for (int w = 0; w < OUT_WIDTH; w++) begin
                         for (int c = 0; c < OUT_SIZE; c++) begin
-                            data_out[h][w][c] <= se_out[h][w][c] + shortcut_out[h][w][c];
+                            // Perform saturated addition of the residual
+                            logic signed [DATA_WIDTH:0] add_res;
+                            add_res = se_out[h][w][c] + shortcut_out[h][w][c];
+
+                            if (add_res > (2**(DATA_WIDTH-1) - 1)) begin
+                                data_out[h][w][c] <= 2**(DATA_WIDTH-1) - 1;
+                            end else if (add_res < -(2**(DATA_WIDTH-1))) begin
+                                data_out[h][w][c] <= -(2**(DATA_WIDTH-1));
+                            end else begin
+                                data_out[h][w][c] <= add_res[DATA_WIDTH-1:0];
+                            end
                         end
                     end
                 end
