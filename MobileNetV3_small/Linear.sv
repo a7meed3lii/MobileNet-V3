@@ -87,12 +87,12 @@ module Linear #(
                 
                 // Linear transformation computation
                 for (int i = 0; i < OUT_FEATURES; i++) begin
-                    automatic logic signed [ACC_WIDTH-1:0] sum;
+                    logic signed [ACC_WIDTH-1:0] sum;
                     sum = 0;
                     
                     for (int j = 0; j < IN_FEATURES; j++) begin
                         // FIXED: Proper multiplication with extended precision
-                        automatic logic signed [MULT_WIDTH-1:0] mult_result;
+                        logic signed [MULT_WIDTH-1:0] mult_result;
                         mult_result = data_in[j] * weights[i][j];
                         sum += mult_result;
                     end
@@ -105,25 +105,27 @@ module Linear #(
             if (valid_pipe[0]) begin
                 for (int i = 0; i < OUT_FEATURES; i++) begin
                     // FIXED: Proper bias addition with extended precision
-                    automatic logic signed [ACC_WIDTH-1:0] bias_extended;
+                    logic signed [ACC_WIDTH-1:0] bias_extended;
                     bias_extended = {{(ACC_WIDTH-DATA_WIDTH){bias[i][DATA_WIDTH-1]}}, bias[i]};
                     biased_accumulator[i] <= accumulator[i] + bias_extended;
                 end
             end
             
-            // Stage 2: Saturation
+            // Stage 2: Scaling and saturation
             if (valid_pipe[1]) begin
                 for (int i = 0; i < OUT_FEATURES; i++) begin
-                    // FIXED: Improved saturation logic with proper bounds checking
-                    automatic logic signed [ACC_WIDTH-1:0] result;
+                    // Apply FRAC_BITS shift before saturation
+                    logic signed [ACC_WIDTH-1:0] result;
+                    logic signed [ACC_WIDTH-FRAC_BITS:0] scaled_result;
                     result = biased_accumulator[i];
-                    
-                    if (result > (2**(DATA_WIDTH-1) - 1)) begin
+                    scaled_result = result >>> FRAC_BITS;
+
+                    if (scaled_result > (2**(DATA_WIDTH-1) - 1)) begin
                         saturated_out[i] <= 2**(DATA_WIDTH-1) - 1;
-                    end else if (result < -(2**(DATA_WIDTH-1))) begin
+                    end else if (scaled_result < -(2**(DATA_WIDTH-1))) begin
                         saturated_out[i] <= -(2**(DATA_WIDTH-1));
                     end else begin
-                        saturated_out[i] <= result[DATA_WIDTH-1:0];
+                        saturated_out[i] <= scaled_result[DATA_WIDTH-1:0];
                     end
                 end
             end

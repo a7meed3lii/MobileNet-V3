@@ -56,8 +56,8 @@ module BatchNorm2d #(
                 for (int w = 0; w < WIDTH; w++) begin
                     for (int c = 0; c < NUM_FEATURES; c++) begin
                         // High-precision intermediate calculation
-                        automatic logic signed [DATA_WIDTH*2-1:0] mult_res;
-                        automatic logic signed [DATA_WIDTH*2:0] add_res;
+                        logic signed [DATA_WIDTH*2-1:0] mult_res;
+                        logic signed [DATA_WIDTH*2:0] add_res;
 
                         // Multiplication: data_in * effective_weight
                         mult_res = data_in[h][w][c] * effective_weight[c];
@@ -123,8 +123,8 @@ module BatchNorm1d #(
         end else if (valid_in) begin
             for (int i = 0; i < NUM_FEATURES; i++) begin
                 // High-precision intermediate calculation
-                automatic logic signed [DATA_WIDTH*2-1:0] mult_res;
-                automatic logic signed [DATA_WIDTH*2:0] add_res;
+                logic signed [DATA_WIDTH*2-1:0] mult_res;
+                logic signed [DATA_WIDTH*2:0] add_res;
 
                 // Multiplication: data_in * effective_weight
                 mult_res = data_in[i] * effective_weight[i];

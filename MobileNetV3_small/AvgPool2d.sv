@@ -62,8 +62,8 @@ module AvgPool2d #(
         end else begin
             if (valid_pipe[2]) begin // Output in stage 3 (4 cycles after input)
                 for (int c = 0; c < IN_CHANNELS; c++) begin
-                    automatic logic signed [DATA_WIDTH+16-1:0] sum;
-                    automatic logic signed [DATA_WIDTH+16-1:0] avg_result;
+                    logic signed [DATA_WIDTH+16-1:0] sum;
+                    logic signed [DATA_WIDTH+16-1:0] avg_result;
                     
                     sum = 0;
                     // Sum all spatial locations for each channel
@@ -164,8 +164,8 @@ module AdaptiveAvgPool2d #(
             if (valid_pipe[2]) begin // Output in stage 3
                 // For OUTPUT_SIZE = 1, this is just global average pooling
                 for (int c = 0; c < IN_CHANNELS; c++) begin
-                    automatic logic signed [DATA_WIDTH+16-1:0] sum;
-                    automatic logic signed [DATA_WIDTH+16-1:0] avg_result;
+                    logic signed [DATA_WIDTH+16-1:0] sum;
+                    logic signed [DATA_WIDTH+16-1:0] avg_result;
                     
                     sum = 0;
                     // Sum all spatial locations for each channel
@@ -181,7 +181,7 @@ module AdaptiveAvgPool2d #(
                     end else if (IN_HEIGHT == 14 && IN_WIDTH == 14) begin
                         avg_result = (sum * 178956971) >>> 35;
                     end else begin
-                        automatic logic signed [DATA_WIDTH+16-1:0] divisor;
+                        logic signed [DATA_WIDTH+16-1:0] divisor;
                         divisor = IN_HEIGHT * IN_WIDTH;
                         avg_result = sum / divisor;
                     end
