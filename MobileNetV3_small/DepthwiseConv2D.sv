@@ -30,7 +30,7 @@ module DepthwiseConv2D #(
     
     // Enhanced accumulator width calculation
     localparam MULT_WIDTH = DATA_WIDTH * 2;
-    localparam ACC_WIDTH = MULT_WIDTH + $clog2(KERNEL_SIZE * KERNEL_SIZE);
+    localparam ACC_WIDTH = MULT_WIDTH + $clog2(KERNEL_SIZE * KERNEL_SIZE) + 6;
 
     localparam PADDED_HEIGHT = IN_HEIGHT + 2 * PADDING;
     localparam PADDED_WIDTH = IN_WIDTH + 2 * PADDING;
