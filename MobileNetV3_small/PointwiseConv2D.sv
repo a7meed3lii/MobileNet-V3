@@ -60,10 +60,10 @@ module PointwiseConv2D #(
                 for (int h = 0; h < IN_HEIGHT; h++) begin
                     for (int w = 0; w < IN_WIDTH; w++) begin
                         for (int oc = 0; oc < OUT_CHANNELS; oc++) begin
-                            automatic logic signed [ACC_WIDTH-1:0] sum = 0;
-                            for (int ic = 0; ic < IN_CHANNELS; ic++) {
+                            logic signed [ACC_WIDTH-1:0] sum = 0;
+                            for (int ic = 0; ic < IN_CHANNELS; ic++) begin
                                 sum += data_in[h][w][ic] * weights[oc][ic];
-                            }
+                            end
                             accumulator[h][w][oc] <= sum;
                         end
                     end
@@ -75,9 +75,9 @@ module PointwiseConv2D #(
                 for (int h = 0; h < IN_HEIGHT; h++) begin
                     for (int w = 0; w < IN_WIDTH; w++) begin
                         for (int oc = 0; oc < OUT_CHANNELS; oc++) begin
-                            automatic logic signed [ACC_WIDTH-1:0] result = accumulator[h][w][oc];
+                            logic signed [ACC_WIDTH-1:0] result = accumulator[h][w][oc];
                             // Right-shift to align fractional bits before saturation
-                            automatic logic signed [ACC_WIDTH-FRAC_BITS:0] shifted_result = result >>> FRAC_BITS;
+                            logic signed [ACC_WIDTH-FRAC_BITS:0] shifted_result = result >>> FRAC_BITS;
 
                             if (shifted_result > (2**(DATA_WIDTH-1) - 1)) begin
                                 data_out[h][w][oc] <= 2**(DATA_WIDTH-1) - 1;

@@ -35,10 +35,10 @@ module hswish #(
             valid_reg <= valid_in;
             
             if (valid_in) begin
-                automatic logic signed [DATA_WIDTH-1:0] x_plus_3;
-                automatic logic signed [DATA_WIDTH-1:0] relu6_result;
-                automatic logic signed [DATA_WIDTH*2-1:0] mult_result;
-                automatic logic signed [DATA_WIDTH*2-1:0] final_result;
+                logic signed [DATA_WIDTH-1:0] x_plus_3;
+                logic signed [DATA_WIDTH-1:0] relu6_result;
+                logic signed [DATA_WIDTH*2-1:0] mult_result;
+                logic signed [DATA_WIDTH*2-1:0] final_result;
                 
                 // Step 1: Add 3
                 x_plus_3 = data_in + three_fixed;
@@ -108,9 +108,9 @@ module hsigmoid #(
             valid_reg <= valid_in;
             
             if (valid_in) begin
-                automatic logic signed [DATA_WIDTH-1:0] x_plus_3;
-                automatic logic signed [DATA_WIDTH-1:0] relu6_result;
-                automatic logic signed [DATA_WIDTH*2-1:0] div_result;
+                logic signed [DATA_WIDTH-1:0] x_plus_3;
+                logic signed [DATA_WIDTH-1:0] relu6_result;
+                logic signed [DATA_WIDTH*2-1:0] div_result;
                 
                 // Step 1: Add 3
                 x_plus_3 = data_in + three_fixed;
