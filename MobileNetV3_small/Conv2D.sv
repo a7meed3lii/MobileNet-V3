@@ -9,7 +9,10 @@ module Conv2D #(
     parameter IN_HEIGHT = 224,
     parameter IN_WIDTH = 224,
     parameter DATA_WIDTH = 8,
-    parameter FRAC_BITS = 4
+    parameter FRAC_BITS = 4,
+    // Derived parameters declared here so they are available for port sizing
+    parameter OUT_HEIGHT = (IN_HEIGHT + 2 * PADDING - KERNEL_SIZE) / STRIDE + 1,
+    parameter OUT_WIDTH  = (IN_WIDTH  + 2 * PADDING - KERNEL_SIZE) / STRIDE + 1
 )(
     
     //-Input
@@ -26,9 +29,7 @@ module Conv2D #(
     output logic valid_out
 );
 
-    // Calculate output dimensions
-    localparam OUT_WIDTH = (IN_WIDTH + 2 * PADDING - KERNEL_SIZE) / STRIDE + 1;
-    localparam OUT_HEIGHT = (IN_HEIGHT + 2 * PADDING - KERNEL_SIZE) / STRIDE + 1;
+    // Calculate output dimensions (already defined as parameters)
 
     // Enhanced accumulator width calculation
     localparam MULT_WIDTH = DATA_WIDTH * 2;
