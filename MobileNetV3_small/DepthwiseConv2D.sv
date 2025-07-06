@@ -86,11 +86,11 @@ module DepthwiseConv2D #(
                 for (int c = 0; c < CHANNELS; c++) begin
                     for (int h = 0; h < OUT_HEIGHT; h++) begin
                         for (int w = 0; w < OUT_WIDTH; w++) begin
-                            automatic logic signed [ACC_WIDTH-1:0] sum = 0;
+                            logic signed [ACC_WIDTH-1:0] sum = 0;
                             for (int kh = 0; kh < KERNEL_SIZE; kh++) begin
-                                for (int kw = 0; kw < KERNEL_SIZE; kw++) {
+                                for (int kw = 0; kw < KERNEL_SIZE; kw++) begin
                                     sum += padded_data_in[h*STRIDE+kh][w*STRIDE+kw][c] * weights[c][kh][kw];
-                                }
+                                end
                             end
                             accumulator[h][w][c] <= sum;
                         end
@@ -103,9 +103,9 @@ module DepthwiseConv2D #(
                 for (int h = 0; h < OUT_HEIGHT; h++) begin
                     for (int w = 0; w < OUT_WIDTH; w++) begin
                         for (int c = 0; c < CHANNELS; c++) begin
-                            automatic logic signed [ACC_WIDTH-1:0] result = accumulator[h][w][c];
+                            logic signed [ACC_WIDTH-1:0] result = accumulator[h][w][c];
                             // Right-shift to align fractional bits before saturation
-                            automatic logic signed [ACC_WIDTH-FRAC_BITS:0] shifted_result = result >>> FRAC_BITS;
+                            logic signed [ACC_WIDTH-FRAC_BITS:0] shifted_result = result >>> FRAC_BITS;
 
                             if (shifted_result > (2**(DATA_WIDTH-1) - 1)) begin
                                 data_out[h][w][c] <= 2**(DATA_WIDTH-1) - 1;

@@ -87,12 +87,12 @@ module Linear #(
                 
                 // Linear transformation computation
                 for (int i = 0; i < OUT_FEATURES; i++) begin
-                    automatic logic signed [ACC_WIDTH-1:0] sum;
+                    logic signed [ACC_WIDTH-1:0] sum;
                     sum = 0;
                     
                     for (int j = 0; j < IN_FEATURES; j++) begin
                         // FIXED: Proper multiplication with extended precision
-                        automatic logic signed [MULT_WIDTH-1:0] mult_result;
+                        logic signed [MULT_WIDTH-1:0] mult_result;
                         mult_result = data_in[j] * weights[i][j];
                         sum += mult_result;
                     end
@@ -105,7 +105,7 @@ module Linear #(
             if (valid_pipe[0]) begin
                 for (int i = 0; i < OUT_FEATURES; i++) begin
                     // FIXED: Proper bias addition with extended precision
-                    automatic logic signed [ACC_WIDTH-1:0] bias_extended;
+                    logic signed [ACC_WIDTH-1:0] bias_extended;
                     bias_extended = {{(ACC_WIDTH-DATA_WIDTH){bias[i][DATA_WIDTH-1]}}, bias[i]};
                     biased_accumulator[i] <= accumulator[i] + bias_extended;
                 end
@@ -115,8 +115,10 @@ module Linear #(
             if (valid_pipe[1]) begin
                 for (int i = 0; i < OUT_FEATURES; i++) begin
                     // Apply FRAC_BITS shift before saturation
-                    automatic logic signed [ACC_WIDTH-1:0] result;
-                    automatic logic signed [ACC_WIDTH-FRAC_BITS:0] scaled_result;
+
+                    logic signed [ACC_WIDTH-1:0] result;
+                    logic signed [ACC_WIDTH-FRAC_BITS:0] scaled_result;
+
                     result = biased_accumulator[i];
                     scaled_result = result >>> FRAC_BITS;
 

@@ -166,7 +166,7 @@ module SeModule #(
             for (int h = 0; h < IN_HEIGHT; h++) begin
                 for (int w = 0; w < IN_WIDTH; w++) begin
                     for (int c = 0; c < IN_SIZE; c++) begin
-                        automatic logic signed [DATA_WIDTH*2-1:0] scaled_val;
+                        logic signed [DATA_WIDTH*2-1:0] scaled_val;
                         scaled_val = data_in[h][w][c] * scale_factor[c];
                         data_out[h][w][c] <= scaled_val >>> FRAC_BITS;
                     end

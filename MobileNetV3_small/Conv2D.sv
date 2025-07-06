@@ -11,9 +11,6 @@ module Conv2D #(
     parameter DATA_WIDTH = 8,
     parameter FRAC_BITS = 4
 )(
-    // Calculate output dimensions
-    localparam OUT_WIDTH = (IN_WIDTH + 2 * PADDING - KERNEL_SIZE) / STRIDE + 1;
-    localparam OUT_HEIGHT = (IN_HEIGHT + 2 * PADDING - KERNEL_SIZE) / STRIDE + 1;
     
     //-Input
     input  logic clk,
@@ -28,6 +25,10 @@ module Conv2D #(
     input  logic valid_in,
     output logic valid_out
 );
+
+    // Calculate output dimensions
+    localparam OUT_WIDTH = (IN_WIDTH + 2 * PADDING - KERNEL_SIZE) / STRIDE + 1;
+    localparam OUT_HEIGHT = (IN_HEIGHT + 2 * PADDING - KERNEL_SIZE) / STRIDE + 1;
 
     // Enhanced accumulator width calculation
     localparam MULT_WIDTH = DATA_WIDTH * 2;
@@ -67,16 +68,16 @@ module Conv2D #(
                 for (int oc = 0; oc < OUT_CHANNELS; oc++) begin
                     for (int oy = 0; oy < OUT_HEIGHT; oy++) begin
                         for (int ox = 0; ox < OUT_WIDTH; ox++) begin
-                            automatic logic signed [ACC_WIDTH-1:0] sum = 0;
+                            logic signed [ACC_WIDTH-1:0] sum = 0;
                             for (int ic = 0; ic < IN_CHANNELS; ic++) begin
                                 for (int ky = 0; ky < KERNEL_SIZE; ky++) begin
                                     for (int kx = 0; kx < KERNEL_SIZE; kx++) begin
-                                        automatic int ix, iy;
+                                        int ix, iy;
                                         ix = ox * STRIDE + kx - PADDING;
                                         iy = oy * STRIDE + ky - PADDING;
                                         
                                         if (ix >= 0 && ix < IN_WIDTH && iy >= 0 && iy < IN_HEIGHT) begin
-                                            automatic logic signed [MULT_WIDTH-1:0] mult_result;
+                                            logic signed [MULT_WIDTH-1:0] mult_result;
                                             mult_result = data_in[iy][ix][ic] * weights[oc][ic][ky][kx];
                                             sum += mult_result;
                                         end
@@ -94,9 +95,9 @@ module Conv2D #(
                 for (int oy = 0; oy < OUT_HEIGHT; oy++) begin
                     for (int ox = 0; ox < OUT_WIDTH; ox++) begin
                         for (int oc = 0; oc < OUT_CHANNELS; oc++) begin
-                            automatic logic signed [ACC_WIDTH-1:0] result = accumulator[oy][ox][oc];
+                            logic signed [ACC_WIDTH-1:0] result = accumulator[oy][ox][oc];
                             // Right-shift to align fractional bits before saturation
-                            automatic logic signed [ACC_WIDTH-FRAC_BITS:0] shifted_result = result >>> FRAC_BITS;
+                            logic signed [ACC_WIDTH-FRAC_BITS:0] shifted_result = result >>> FRAC_BITS;
 
                             if (shifted_result > (2**(DATA_WIDTH-1) - 1)) begin
                                 data_out[oy][ox][oc] <= 2**(DATA_WIDTH-1) - 1;
