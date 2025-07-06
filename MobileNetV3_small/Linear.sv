@@ -111,19 +111,21 @@ module Linear #(
                 end
             end
             
-            // Stage 2: Saturation
+            // Stage 2: Scaling and saturation
             if (valid_pipe[1]) begin
                 for (int i = 0; i < OUT_FEATURES; i++) begin
-                    // FIXED: Improved saturation logic with proper bounds checking
+                    // Apply FRAC_BITS shift before saturation
                     automatic logic signed [ACC_WIDTH-1:0] result;
+                    automatic logic signed [ACC_WIDTH-FRAC_BITS:0] scaled_result;
                     result = biased_accumulator[i];
-                    
-                    if (result > (2**(DATA_WIDTH-1) - 1)) begin
+                    scaled_result = result >>> FRAC_BITS;
+
+                    if (scaled_result > (2**(DATA_WIDTH-1) - 1)) begin
                         saturated_out[i] <= 2**(DATA_WIDTH-1) - 1;
-                    end else if (result < -(2**(DATA_WIDTH-1))) begin
+                    end else if (scaled_result < -(2**(DATA_WIDTH-1))) begin
                         saturated_out[i] <= -(2**(DATA_WIDTH-1));
                     end else begin
-                        saturated_out[i] <= result[DATA_WIDTH-1:0];
+                        saturated_out[i] <= scaled_result[DATA_WIDTH-1:0];
                     end
                 end
             end
