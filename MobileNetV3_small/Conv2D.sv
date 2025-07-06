@@ -31,7 +31,7 @@ module Conv2D #(
 
     // Enhanced accumulator width calculation
     localparam MULT_WIDTH = DATA_WIDTH * 2;
-    localparam ACC_WIDTH = MULT_WIDTH + $clog2(KERNEL_SIZE * KERNEL_SIZE * IN_CHANNELS);
+    localparam ACC_WIDTH = MULT_WIDTH + $clog2(KERNEL_SIZE * KERNEL_SIZE * IN_CHANNELS) + 6;
 
     // Pipelined implementation registers
     logic signed [ACC_WIDTH-1:0] accumulator [0:OUT_HEIGHT-1][0:OUT_WIDTH-1][0:OUT_CHANNELS-1];

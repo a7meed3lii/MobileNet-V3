@@ -87,30 +87,25 @@ module MobileNetV3_Small #(
     logic signed [DATA_WIDTH-1:0] linear3_act_out [0:1279];
     
     // FIXED: Pipeline control signals
-    logic valid_pipe [0:15]; // Pipeline stages: conv1, 11 blocks, conv2, pool, linear3, linear4
-    logic ready_pipe [0:15];
+    logic valid_pipe [0:18]; // conv1, 11 blocks, conv2, pool, linear3, linear4
+    logic ready_pipe [0:18];
     
     // Weight signals from WeightLoader
     logic signed [DATA_WIDTH-1:0] conv1_weights [0:15][0:0][0:2][0:2];
     logic signed [DATA_WIDTH-1:0] conv1_bias [0:15];
-    logic signed [DATA_WIDTH-1:0] conv1_bn_gamma [0:15];
-    logic signed [DATA_WIDTH-1:0] conv1_bn_beta [0:15];
-    logic signed [DATA_WIDTH-1:0] conv1_bn_mean [0:15];
-    logic signed [DATA_WIDTH-1:0] conv1_bn_var [0:15];
+    logic signed [DATA_WIDTH-1:0] conv1_bn_w [0:15];
+    logic signed [DATA_WIDTH-1:0] conv1_bn_b [0:15];
     
     logic signed [DATA_WIDTH-1:0] conv2_weights [0:575][0:95];
     logic signed [DATA_WIDTH-1:0] conv2_bias [0:575];
-    logic signed [DATA_WIDTH-1:0] conv2_bn_gamma [0:575];
-    logic signed [DATA_WIDTH-1:0] conv2_bn_beta [0:575];
-    logic signed [DATA_WIDTH-1:0] conv2_bn_mean [0:575];
-    logic signed [DATA_WIDTH-1:0] conv2_bn_var [0:575];
+    // Standardised BatchNorm interface
+    logic signed [DATA_WIDTH-1:0] conv2_bn_w   [0:575];
+    logic signed [DATA_WIDTH-1:0] conv2_bn_b   [0:575];
     
     logic signed [DATA_WIDTH-1:0] linear3_weights [0:1279][0:575];
     logic signed [DATA_WIDTH-1:0] linear3_bias [0:1279];
-    logic signed [DATA_WIDTH-1:0] linear3_bn_gamma [0:1279];
-    logic signed [DATA_WIDTH-1:0] linear3_bn_beta [0:1279];
-    logic signed [DATA_WIDTH-1:0] linear3_bn_mean [0:1279];
-    logic signed [DATA_WIDTH-1:0] linear3_bn_var [0:1279];
+    logic signed [DATA_WIDTH-1:0] linear3_bn_w [0:1279];
+    logic signed [DATA_WIDTH-1:0] linear3_bn_b [0:1279];
     
     logic signed [DATA_WIDTH-1:0] linear4_weights [0:NUM_CLASSES-1][0:1279];
     logic signed [DATA_WIDTH-1:0] linear4_bias [0:NUM_CLASSES-1];
@@ -127,43 +122,31 @@ module MobileNetV3_Small #(
     // Block weight arrays (simplified interface)
     logic signed [DATA_WIDTH-1:0] block_expand_weights [0:10][0:575][0:575];
     logic signed [DATA_WIDTH-1:0] block_expand_bias [0:10][0:575];
-    logic signed [DATA_WIDTH-1:0] block_expand_bn_gamma [0:10][0:575];
-    logic signed [DATA_WIDTH-1:0] block_expand_bn_beta [0:10][0:575];
-    logic signed [DATA_WIDTH-1:0] block_expand_bn_mean [0:10][0:575];
-    logic signed [DATA_WIDTH-1:0] block_expand_bn_var [0:10][0:575];
+    logic signed [DATA_WIDTH-1:0] block_expand_bn_w [0:10][0:575];
+    logic signed [DATA_WIDTH-1:0] block_expand_bn_b [0:10][0:575];
     
     logic signed [DATA_WIDTH-1:0] block_dw_weights [0:10][0:575][0:4][0:4];
     logic signed [DATA_WIDTH-1:0] block_dw_bias [0:10][0:575];
-    logic signed [DATA_WIDTH-1:0] block_dw_bn_gamma [0:10][0:575];
-    logic signed [DATA_WIDTH-1:0] block_dw_bn_beta [0:10][0:575];
-    logic signed [DATA_WIDTH-1:0] block_dw_bn_mean [0:10][0:575];
-    logic signed [DATA_WIDTH-1:0] block_dw_bn_var [0:10][0:575];
+    logic signed [DATA_WIDTH-1:0] block_dw_bn_w [0:10][0:575];
+    logic signed [DATA_WIDTH-1:0] block_dw_bn_b [0:10][0:575];
     
     logic signed [DATA_WIDTH-1:0] block_pw_weights [0:10][0:95][0:575];
     logic signed [DATA_WIDTH-1:0] block_pw_bias [0:10][0:95];
-    logic signed [DATA_WIDTH-1:0] block_pw_bn_gamma [0:10][0:95];
-    logic signed [DATA_WIDTH-1:0] block_pw_bn_beta [0:10][0:95];
-    logic signed [DATA_WIDTH-1:0] block_pw_bn_mean [0:10][0:95];
-    logic signed [DATA_WIDTH-1:0] block_pw_bn_var [0:10][0:95];
+    logic signed [DATA_WIDTH-1:0] block_pw_bn_w [0:10][0:95];
+    logic signed [DATA_WIDTH-1:0] block_pw_bn_b [0:10][0:95];
     
     logic signed [DATA_WIDTH-1:0] block_se_conv1_weights [0:10][0:23][0:95];
-    logic signed [DATA_WIDTH-1:0] block_se_conv1_bn_gamma [0:10][0:23];
-    logic signed [DATA_WIDTH-1:0] block_se_conv1_bn_beta [0:10][0:23];
-    logic signed [DATA_WIDTH-1:0] block_se_conv1_bn_mean [0:10][0:23];
-    logic signed [DATA_WIDTH-1:0] block_se_conv1_bn_var [0:10][0:23];
+    logic signed [DATA_WIDTH-1:0] block_se_conv1_bn_w [0:10][0:23];
+    logic signed [DATA_WIDTH-1:0] block_se_conv1_bn_b [0:10][0:23];
     
     logic signed [DATA_WIDTH-1:0] block_se_conv2_weights [0:10][0:95][0:23];
-    logic signed [DATA_WIDTH-1:0] block_se_conv2_bn_gamma [0:10][0:95];
-    logic signed [DATA_WIDTH-1:0] block_se_conv2_bn_beta [0:10][0:95];
-    logic signed [DATA_WIDTH-1:0] block_se_conv2_bn_mean [0:10][0:95];
-    logic signed [DATA_WIDTH-1:0] block_se_conv2_bn_var [0:10][0:95];
+    logic signed [DATA_WIDTH-1:0] block_se_conv2_bn_w [0:10][0:95];
+    logic signed [DATA_WIDTH-1:0] block_se_conv2_bn_b [0:10][0:95];
     
     logic signed [DATA_WIDTH-1:0] block_shortcut_weights [0:10][0:95][0:95];
     logic signed [DATA_WIDTH-1:0] block_shortcut_bias [0:10][0:95];
-    logic signed [DATA_WIDTH-1:0] block_shortcut_bn_gamma [0:10][0:95];
-    logic signed [DATA_WIDTH-1:0] block_shortcut_bn_beta [0:10][0:95];
-    logic signed [DATA_WIDTH-1:0] block_shortcut_bn_mean [0:10][0:95];
-    logic signed [DATA_WIDTH-1:0] block_shortcut_bn_var [0:10][0:95];
+    logic signed [DATA_WIDTH-1:0] block_shortcut_bn_w [0:10][0:95];
+    logic signed [DATA_WIDTH-1:0] block_shortcut_bn_b [0:10][0:95];
     
     // ENHANCED: Overflow detection registers
     logic [15:0] overflow_counter;
@@ -187,24 +170,18 @@ module MobileNetV3_Small #(
         // Weight outputs
         .conv1_weights(conv1_weights),
         .conv1_bias(conv1_bias),
-        .conv1_bn_gamma(conv1_bn_gamma),
-        .conv1_bn_beta(conv1_bn_beta),
-        .conv1_bn_mean(conv1_bn_mean),
-        .conv1_bn_var(conv1_bn_var),
+        .conv1_bn_w(conv1_bn_w),
+        .conv1_bn_b(conv1_bn_b),
         
         .conv2_weights(conv2_weights),
         .conv2_bias(conv2_bias),
-        .conv2_bn_gamma(conv2_bn_gamma),
-        .conv2_bn_beta(conv2_bn_beta),
-        .conv2_bn_mean(conv2_bn_mean),
-        .conv2_bn_var(conv2_bn_var),
+        .conv2_bn_w(conv2_bn_w),
+        .conv2_bn_b(conv2_bn_b),
         
         .linear3_weights(linear3_weights),
         .linear3_bias(linear3_bias),
-        .linear3_bn_gamma(linear3_bn_gamma),
-        .linear3_bn_beta(linear3_bn_beta),
-        .linear3_bn_mean(linear3_bn_mean),
-        .linear3_bn_var(linear3_bn_var),
+        .linear3_bn_w(linear3_bn_w),
+        .linear3_bn_b(linear3_bn_b),
         
         .linear4_weights(linear4_weights),
         .linear4_bias(linear4_bias),
@@ -212,43 +189,31 @@ module MobileNetV3_Small #(
         // Block weights and configuration
         .block_expand_weights(block_expand_weights),
         .block_expand_bias(block_expand_bias),
-        .block_expand_bn_gamma(block_expand_bn_gamma),
-        .block_expand_bn_beta(block_expand_bn_beta),
-        .block_expand_bn_mean(block_expand_bn_mean),
-        .block_expand_bn_var(block_expand_bn_var),
+        .block_expand_bn_w(block_expand_bn_w),
+        .block_expand_bn_b(block_expand_bn_b),
         
         .block_dw_weights(block_dw_weights),
         .block_dw_bias(block_dw_bias),
-        .block_dw_bn_gamma(block_dw_bn_gamma),
-        .block_dw_bn_beta(block_dw_bn_beta),
-        .block_dw_bn_mean(block_dw_bn_mean),
-        .block_dw_bn_var(block_dw_bn_var),
+        .block_dw_bn_w(block_dw_bn_w),
+        .block_dw_bn_b(block_dw_bn_b),
         
         .block_pw_weights(block_pw_weights),
         .block_pw_bias(block_pw_bias),
-        .block_pw_bn_gamma(block_pw_bn_gamma),
-        .block_pw_bn_beta(block_pw_bn_beta),
-        .block_pw_bn_mean(block_pw_bn_mean),
-        .block_pw_bn_var(block_pw_bn_var),
+        .block_pw_bn_w(block_pw_bn_w),
+        .block_pw_bn_b(block_pw_bn_b),
         
         .block_se_conv1_weights(block_se_conv1_weights),
-        .block_se_conv1_bn_gamma(block_se_conv1_bn_gamma),
-        .block_se_conv1_bn_beta(block_se_conv1_bn_beta),
-        .block_se_conv1_bn_mean(block_se_conv1_bn_mean),
-        .block_se_conv1_bn_var(block_se_conv1_bn_var),
+        .block_se_conv1_bn_w(block_se_conv1_bn_w),
+        .block_se_conv1_bn_b(block_se_conv1_bn_b),
         
         .block_se_conv2_weights(block_se_conv2_weights),
-        .block_se_conv2_bn_gamma(block_se_conv2_bn_gamma),
-        .block_se_conv2_bn_beta(block_se_conv2_bn_beta),
-        .block_se_conv2_bn_mean(block_se_conv2_bn_mean),
-        .block_se_conv2_bn_var(block_se_conv2_bn_var),
+        .block_se_conv2_bn_w(block_se_conv2_bn_w),
+        .block_se_conv2_bn_b(block_se_conv2_bn_b),
         
         .block_shortcut_weights(block_shortcut_weights),
         .block_shortcut_bias(block_shortcut_bias),
-        .block_shortcut_bn_gamma(block_shortcut_bn_gamma),
-        .block_shortcut_bn_beta(block_shortcut_bn_beta),
-        .block_shortcut_bn_mean(block_shortcut_bn_mean),
-        .block_shortcut_bn_var(block_shortcut_bn_var),
+        .block_shortcut_bn_w(block_shortcut_bn_w),
+        .block_shortcut_bn_b(block_shortcut_bn_b),
         
         // Configuration
         .block_use_se(block_use_se),
@@ -347,10 +312,8 @@ module MobileNetV3_Small #(
         .rst(rst),
         .data_in(conv1_out),
         .data_out(conv1_bn_out),
-        .gamma(conv1_bn_gamma),
-        .beta(conv1_bn_beta),
-        .running_mean(conv1_bn_mean),
-        .running_var(conv1_bn_var),
+        .effective_weight(conv1_bn_w),
+        .effective_bias(conv1_bn_b),
         .valid_in(valid_pipe[0]),
         .valid_out(valid_pipe[1]),
         .ready_out(ready_pipe[1]),
@@ -376,44 +339,362 @@ module MobileNetV3_Small #(
         end
     endgenerate
 
-    // SIMPLIFIED: Block instantiations using configuration from WeightLoader
-    // Note: This is a simplified representation. In a full implementation,
-    // each block would be instantiated with proper parameter mapping from the WeightLoader
-    
-    // For brevity, showing just the structure. Full implementation would have
-    // all 11 blocks properly instantiated with their specific configurations.
-    
-    // Example: Block 1 instantiation
-    // Block #(
-    //     .KERNEL_SIZE(block_kernel_size[0]),
-    //     .IN_SIZE(block_in_channels[0]),
-    //     .EXPAND_SIZE(block_expand_channels[0]),
-    //     .OUT_SIZE(block_out_channels[0]),
-    //     .STRIDE(block_stride[0]),
-    //     .USE_SE(block_use_se[0]),
-    //     .NONLINEARITY("RELU"),
-    //     .IN_HEIGHT(112),
-    //     .IN_WIDTH(112),
-    //     .DATA_WIDTH(DATA_WIDTH),
-    //     .FRAC_BITS(FRAC_BITS),
-    //     .SE_REDUCE_SIZE(block_se_reduce_channels[0])
-    // ) block1 (
-    //     .clk(clk),
-    //     .rst(rst),
-    //     .data_in(conv1_act_out),
-    //     .data_out(block1_out),
-    //     .valid_in(valid_pipe[2]),
-    //     .valid_out(valid_pipe[3]),
-    //     // Weight connections would use block_*_weights[0] arrays
-    //     // ... weight connections ...
-    // );
-    
-    // For now, using simplified passthrough for blocks to demonstrate structure
-    assign block1_out = conv1_act_out[0:55]; // Simplified - stride 2 reduces size
-    assign valid_pipe[3] = valid_pipe[2]; // Simplified pipeline
-    
-    // Continue for all 11 blocks...
-    // Each block would have proper instantiation with weights from WeightLoader
+    // ------------------------------------------------------------------
+    // Inverted residual blocks (11 instances)
+    // Parameters are fixed to match the Python reference implementation.
+    // Weight arrays are indexed per block from the WeightLoader outputs.
+
+    // Block 1: 16 -> 16, stride 2, ReLU, SE
+    Block #(
+        .KERNEL_SIZE(3), .IN_SIZE(16), .EXPAND_SIZE(16), .OUT_SIZE(16),
+        .STRIDE(2), .USE_SE(1), .NONLINEARITY("RELU"),
+        .IN_HEIGHT(112), .IN_WIDTH(112),
+        .DATA_WIDTH(DATA_WIDTH), .FRAC_BITS(FRAC_BITS),
+        .SE_REDUCE_SIZE(4)
+    ) block1 (
+        .clk(clk), .rst(rst),
+        .data_in(conv1_act_out),
+        .data_out(block1_out),
+        .expand_weights(block_expand_weights[0]),
+        .expand_bn_w(block_expand_bn_w[0]),
+        .expand_bn_b(block_expand_bn_b[0]),
+        .dw_weights(block_dw_weights[0]),
+        .dw_bn_w(block_dw_bn_w[0]),
+        .dw_bn_b(block_dw_bn_b[0]),
+        .pw_weights(block_pw_weights[0]),
+        .pw_bn_w(block_pw_bn_w[0]),
+        .pw_bn_b(block_pw_bn_b[0]),
+        .se_conv1_weights(block_se_conv1_weights[0]),
+        .se_conv1_bn_w(block_se_conv1_bn_w[0]),
+        .se_conv1_bn_b(block_se_conv1_bn_b[0]),
+        .se_conv2_weights(block_se_conv2_weights[0]),
+        .se_conv2_bn_w(block_se_conv2_bn_w[0]),
+        .se_conv2_bn_b(block_se_conv2_bn_b[0]),
+        .shortcut_weights(block_shortcut_weights[0]),
+        .shortcut_bn_w(block_shortcut_bn_w[0]),
+        .shortcut_bn_b(block_shortcut_bn_b[0])
+    );
+
+    // Block 2: 16 -> 24, stride 2, ReLU
+    Block #(
+        .KERNEL_SIZE(3), .IN_SIZE(16), .EXPAND_SIZE(72), .OUT_SIZE(24),
+        .STRIDE(2), .USE_SE(0), .NONLINEARITY("RELU"),
+        .IN_HEIGHT(56), .IN_WIDTH(56),
+        .DATA_WIDTH(DATA_WIDTH), .FRAC_BITS(FRAC_BITS)
+    ) block2 (
+        .clk(clk), .rst(rst),
+        .data_in(block1_out),
+        .data_out(block2_out),
+        .expand_weights(block_expand_weights[1]),
+        .expand_bn_w(block_expand_bn_w[1]),
+        .expand_bn_b(block_expand_bn_b[1]),
+        .dw_weights(block_dw_weights[1]),
+        .dw_bn_w(block_dw_bn_w[1]),
+        .dw_bn_b(block_dw_bn_b[1]),
+        .pw_weights(block_pw_weights[1]),
+        .pw_bn_w(block_pw_bn_w[1]),
+        .pw_bn_b(block_pw_bn_b[1]),
+        .se_conv1_weights(block_se_conv1_weights[1]),
+        .se_conv1_bn_w(block_se_conv1_bn_w[1]),
+        .se_conv1_bn_b(block_se_conv1_bn_b[1]),
+        .se_conv2_weights(block_se_conv2_weights[1]),
+        .se_conv2_bn_w(block_se_conv2_bn_w[1]),
+        .se_conv2_bn_b(block_se_conv2_bn_b[1]),
+        .shortcut_weights(block_shortcut_weights[1]),
+        .shortcut_bn_w(block_shortcut_bn_w[1]),
+        .shortcut_bn_b(block_shortcut_bn_b[1])
+    );
+
+    // Block 3: 24 -> 24, stride 1, ReLU
+    Block #(
+        .KERNEL_SIZE(3), .IN_SIZE(24), .EXPAND_SIZE(88), .OUT_SIZE(24),
+        .STRIDE(1), .USE_SE(0), .NONLINEARITY("RELU"),
+        .IN_HEIGHT(28), .IN_WIDTH(28),
+        .DATA_WIDTH(DATA_WIDTH), .FRAC_BITS(FRAC_BITS)
+    ) block3 (
+        .clk(clk), .rst(rst),
+        .data_in(block2_out),
+        .data_out(block3_out),
+        .expand_weights(block_expand_weights[2]),
+        .expand_bn_w(block_expand_bn_w[2]),
+        .expand_bn_b(block_expand_bn_b[2]),
+        .dw_weights(block_dw_weights[2]),
+        .dw_bn_w(block_dw_bn_w[2]),
+        .dw_bn_b(block_dw_bn_b[2]),
+        .pw_weights(block_pw_weights[2]),
+        .pw_bn_w(block_pw_bn_w[2]),
+        .pw_bn_b(block_pw_bn_b[2]),
+        .se_conv1_weights(block_se_conv1_weights[2]),
+        .se_conv1_bn_w(block_se_conv1_bn_w[2]),
+        .se_conv1_bn_b(block_se_conv1_bn_b[2]),
+        .se_conv2_weights(block_se_conv2_weights[2]),
+        .se_conv2_bn_w(block_se_conv2_bn_w[2]),
+        .se_conv2_bn_b(block_se_conv2_bn_b[2]),
+        .shortcut_weights(block_shortcut_weights[2]),
+        .shortcut_bn_w(block_shortcut_bn_w[2]),
+        .shortcut_bn_b(block_shortcut_bn_b[2])
+    );
+
+    // Block 4: 24 -> 40, stride 2, hswish, SE
+    Block #(
+        .KERNEL_SIZE(5), .IN_SIZE(24), .EXPAND_SIZE(96), .OUT_SIZE(40),
+        .STRIDE(2), .USE_SE(1), .NONLINEARITY("HSWISH"),
+        .IN_HEIGHT(28), .IN_WIDTH(28),
+        .DATA_WIDTH(DATA_WIDTH), .FRAC_BITS(FRAC_BITS),
+        .SE_REDUCE_SIZE(10)
+    ) block4 (
+        .clk(clk), .rst(rst),
+        .data_in(block3_out),
+        .data_out(block4_out),
+        .expand_weights(block_expand_weights[3]),
+        .expand_bn_w(block_expand_bn_w[3]),
+        .expand_bn_b(block_expand_bn_b[3]),
+        .dw_weights(block_dw_weights[3]),
+        .dw_bn_w(block_dw_bn_w[3]),
+        .dw_bn_b(block_dw_bn_b[3]),
+        .pw_weights(block_pw_weights[3]),
+        .pw_bn_w(block_pw_bn_w[3]),
+        .pw_bn_b(block_pw_bn_b[3]),
+        .se_conv1_weights(block_se_conv1_weights[3]),
+        .se_conv1_bn_w(block_se_conv1_bn_w[3]),
+        .se_conv1_bn_b(block_se_conv1_bn_b[3]),
+        .se_conv2_weights(block_se_conv2_weights[3]),
+        .se_conv2_bn_w(block_se_conv2_bn_w[3]),
+        .se_conv2_bn_b(block_se_conv2_bn_b[3]),
+        .shortcut_weights(block_shortcut_weights[3]),
+        .shortcut_bn_w(block_shortcut_bn_w[3]),
+        .shortcut_bn_b(block_shortcut_bn_b[3])
+    );
+
+    // Block 5: 40 -> 40, stride 1, hswish, SE
+    Block #(
+        .KERNEL_SIZE(5), .IN_SIZE(40), .EXPAND_SIZE(240), .OUT_SIZE(40),
+        .STRIDE(1), .USE_SE(1), .NONLINEARITY("HSWISH"),
+        .IN_HEIGHT(14), .IN_WIDTH(14),
+        .DATA_WIDTH(DATA_WIDTH), .FRAC_BITS(FRAC_BITS),
+        .SE_REDUCE_SIZE(10)
+    ) block5 (
+        .clk(clk), .rst(rst),
+        .data_in(block4_out),
+        .data_out(block5_out),
+        .expand_weights(block_expand_weights[4]),
+        .expand_bn_w(block_expand_bn_w[4]),
+        .expand_bn_b(block_expand_bn_b[4]),
+        .dw_weights(block_dw_weights[4]),
+        .dw_bn_w(block_dw_bn_w[4]),
+        .dw_bn_b(block_dw_bn_b[4]),
+        .pw_weights(block_pw_weights[4]),
+        .pw_bn_w(block_pw_bn_w[4]),
+        .pw_bn_b(block_pw_bn_b[4]),
+        .se_conv1_weights(block_se_conv1_weights[4]),
+        .se_conv1_bn_w(block_se_conv1_bn_w[4]),
+        .se_conv1_bn_b(block_se_conv1_bn_b[4]),
+        .se_conv2_weights(block_se_conv2_weights[4]),
+        .se_conv2_bn_w(block_se_conv2_bn_w[4]),
+        .se_conv2_bn_b(block_se_conv2_bn_b[4]),
+        .shortcut_weights(block_shortcut_weights[4]),
+        .shortcut_bn_w(block_shortcut_bn_w[4]),
+        .shortcut_bn_b(block_shortcut_bn_b[4])
+    );
+
+    // Block 6: 40 -> 40, stride 1, hswish, SE
+    Block #(
+        .KERNEL_SIZE(5), .IN_SIZE(40), .EXPAND_SIZE(240), .OUT_SIZE(40),
+        .STRIDE(1), .USE_SE(1), .NONLINEARITY("HSWISH"),
+        .IN_HEIGHT(14), .IN_WIDTH(14),
+        .DATA_WIDTH(DATA_WIDTH), .FRAC_BITS(FRAC_BITS),
+        .SE_REDUCE_SIZE(10)
+    ) block6 (
+        .clk(clk), .rst(rst),
+        .data_in(block5_out),
+        .data_out(block6_out),
+        .expand_weights(block_expand_weights[5]),
+        .expand_bn_w(block_expand_bn_w[5]),
+        .expand_bn_b(block_expand_bn_b[5]),
+        .dw_weights(block_dw_weights[5]),
+        .dw_bn_w(block_dw_bn_w[5]),
+        .dw_bn_b(block_dw_bn_b[5]),
+        .pw_weights(block_pw_weights[5]),
+        .pw_bn_w(block_pw_bn_w[5]),
+        .pw_bn_b(block_pw_bn_b[5]),
+        .se_conv1_weights(block_se_conv1_weights[5]),
+        .se_conv1_bn_w(block_se_conv1_bn_w[5]),
+        .se_conv1_bn_b(block_se_conv1_bn_b[5]),
+        .se_conv2_weights(block_se_conv2_weights[5]),
+        .se_conv2_bn_w(block_se_conv2_bn_w[5]),
+        .se_conv2_bn_b(block_se_conv2_bn_b[5]),
+        .shortcut_weights(block_shortcut_weights[5]),
+        .shortcut_bn_w(block_shortcut_bn_w[5]),
+        .shortcut_bn_b(block_shortcut_bn_b[5])
+    );
+
+    // Block 7: 40 -> 48, stride 1, hswish, SE
+    Block #(
+        .KERNEL_SIZE(5), .IN_SIZE(40), .EXPAND_SIZE(120), .OUT_SIZE(48),
+        .STRIDE(1), .USE_SE(1), .NONLINEARITY("HSWISH"),
+        .IN_HEIGHT(14), .IN_WIDTH(14),
+        .DATA_WIDTH(DATA_WIDTH), .FRAC_BITS(FRAC_BITS),
+        .SE_REDUCE_SIZE(12)
+    ) block7 (
+        .clk(clk), .rst(rst),
+        .data_in(block6_out),
+        .data_out(block7_out),
+        .expand_weights(block_expand_weights[6]),
+        .expand_bn_w(block_expand_bn_w[6]),
+        .expand_bn_b(block_expand_bn_b[6]),
+        .dw_weights(block_dw_weights[6]),
+        .dw_bn_w(block_dw_bn_w[6]),
+        .dw_bn_b(block_dw_bn_b[6]),
+        .pw_weights(block_pw_weights[6]),
+        .pw_bn_w(block_pw_bn_w[6]),
+        .pw_bn_b(block_pw_bn_b[6]),
+        .se_conv1_weights(block_se_conv1_weights[6]),
+        .se_conv1_bn_w(block_se_conv1_bn_w[6]),
+        .se_conv1_bn_b(block_se_conv1_bn_b[6]),
+        .se_conv2_weights(block_se_conv2_weights[6]),
+        .se_conv2_bn_w(block_se_conv2_bn_w[6]),
+        .se_conv2_bn_b(block_se_conv2_bn_b[6]),
+        .shortcut_weights(block_shortcut_weights[6]),
+        .shortcut_bn_w(block_shortcut_bn_w[6]),
+        .shortcut_bn_b(block_shortcut_bn_b[6])
+    );
+
+    // Block 8: 48 -> 48, stride 1, hswish, SE
+    Block #(
+        .KERNEL_SIZE(5), .IN_SIZE(48), .EXPAND_SIZE(144), .OUT_SIZE(48),
+        .STRIDE(1), .USE_SE(1), .NONLINEARITY("HSWISH"),
+        .IN_HEIGHT(14), .IN_WIDTH(14),
+        .DATA_WIDTH(DATA_WIDTH), .FRAC_BITS(FRAC_BITS),
+        .SE_REDUCE_SIZE(12)
+    ) block8 (
+        .clk(clk), .rst(rst),
+        .data_in(block7_out),
+        .data_out(block8_out),
+        .expand_weights(block_expand_weights[7]),
+        .expand_bn_w(block_expand_bn_w[7]),
+        .expand_bn_b(block_expand_bn_b[7]),
+        .dw_weights(block_dw_weights[7]),
+        .dw_bn_w(block_dw_bn_w[7]),
+        .dw_bn_b(block_dw_bn_b[7]),
+        .pw_weights(block_pw_weights[7]),
+        .pw_bn_w(block_pw_bn_w[7]),
+        .pw_bn_b(block_pw_bn_b[7]),
+        .se_conv1_weights(block_se_conv1_weights[7]),
+        .se_conv1_bn_w(block_se_conv1_bn_w[7]),
+        .se_conv1_bn_b(block_se_conv1_bn_b[7]),
+        .se_conv2_weights(block_se_conv2_weights[7]),
+        .se_conv2_bn_w(block_se_conv2_bn_w[7]),
+        .se_conv2_bn_b(block_se_conv2_bn_b[7]),
+        .shortcut_weights(block_shortcut_weights[7]),
+        .shortcut_bn_w(block_shortcut_bn_w[7]),
+        .shortcut_bn_b(block_shortcut_bn_b[7])
+    );
+
+    // Block 9: 48 -> 96, stride 2, hswish, SE
+    Block #(
+        .KERNEL_SIZE(5), .IN_SIZE(48), .EXPAND_SIZE(288), .OUT_SIZE(96),
+        .STRIDE(2), .USE_SE(1), .NONLINEARITY("HSWISH"),
+        .IN_HEIGHT(14), .IN_WIDTH(14),
+        .DATA_WIDTH(DATA_WIDTH), .FRAC_BITS(FRAC_BITS),
+        .SE_REDUCE_SIZE(24)
+    ) block9 (
+        .clk(clk), .rst(rst),
+        .data_in(block8_out),
+        .data_out(block9_out),
+        .expand_weights(block_expand_weights[8]),
+        .expand_bn_w(block_expand_bn_w[8]),
+        .expand_bn_b(block_expand_bn_b[8]),
+        .dw_weights(block_dw_weights[8]),
+        .dw_bn_w(block_dw_bn_w[8]),
+        .dw_bn_b(block_dw_bn_b[8]),
+        .pw_weights(block_pw_weights[8]),
+        .pw_bn_w(block_pw_bn_w[8]),
+        .pw_bn_b(block_pw_bn_b[8]),
+        .se_conv1_weights(block_se_conv1_weights[8]),
+        .se_conv1_bn_w(block_se_conv1_bn_w[8]),
+        .se_conv1_bn_b(block_se_conv1_bn_b[8]),
+        .se_conv2_weights(block_se_conv2_weights[8]),
+        .se_conv2_bn_w(block_se_conv2_bn_w[8]),
+        .se_conv2_bn_b(block_se_conv2_bn_b[8]),
+        .shortcut_weights(block_shortcut_weights[8]),
+        .shortcut_bn_w(block_shortcut_bn_w[8]),
+        .shortcut_bn_b(block_shortcut_bn_b[8])
+    );
+
+    // Block10: 96 -> 96, stride 1, hswish, SE
+    Block #(
+        .KERNEL_SIZE(5), .IN_SIZE(96), .EXPAND_SIZE(576), .OUT_SIZE(96),
+        .STRIDE(1), .USE_SE(1), .NONLINEARITY("HSWISH"),
+        .IN_HEIGHT(7), .IN_WIDTH(7),
+        .DATA_WIDTH(DATA_WIDTH), .FRAC_BITS(FRAC_BITS),
+        .SE_REDUCE_SIZE(24)
+    ) block10 (
+        .clk(clk), .rst(rst),
+        .data_in(block9_out),
+        .data_out(block10_out),
+        .expand_weights(block_expand_weights[9]),
+        .expand_bn_w(block_expand_bn_w[9]),
+        .expand_bn_b(block_expand_bn_b[9]),
+        .dw_weights(block_dw_weights[9]),
+        .dw_bn_w(block_dw_bn_w[9]),
+        .dw_bn_b(block_dw_bn_b[9]),
+        .pw_weights(block_pw_weights[9]),
+        .pw_bn_w(block_pw_bn_w[9]),
+        .pw_bn_b(block_pw_bn_b[9]),
+        .se_conv1_weights(block_se_conv1_weights[9]),
+        .se_conv1_bn_w(block_se_conv1_bn_w[9]),
+        .se_conv1_bn_b(block_se_conv1_bn_b[9]),
+        .se_conv2_weights(block_se_conv2_weights[9]),
+        .se_conv2_bn_w(block_se_conv2_bn_w[9]),
+        .se_conv2_bn_b(block_se_conv2_bn_b[9]),
+        .shortcut_weights(block_shortcut_weights[9]),
+        .shortcut_bn_w(block_shortcut_bn_w[9]),
+        .shortcut_bn_b(block_shortcut_bn_b[9])
+    );
+
+    // Block11: 96 -> 96, stride 1, hswish, SE
+    Block #(
+        .KERNEL_SIZE(5), .IN_SIZE(96), .EXPAND_SIZE(576), .OUT_SIZE(96),
+        .STRIDE(1), .USE_SE(1), .NONLINEARITY("HSWISH"),
+        .IN_HEIGHT(7), .IN_WIDTH(7),
+        .DATA_WIDTH(DATA_WIDTH), .FRAC_BITS(FRAC_BITS),
+        .SE_REDUCE_SIZE(24)
+    ) block11 (
+        .clk(clk), .rst(rst),
+        .data_in(block10_out),
+        .data_out(block11_out),
+        .expand_weights(block_expand_weights[10]),
+        .expand_bn_w(block_expand_bn_w[10]),
+        .expand_bn_b(block_expand_bn_b[10]),
+        .dw_weights(block_dw_weights[10]),
+        .dw_bn_w(block_dw_bn_w[10]),
+        .dw_bn_b(block_dw_bn_b[10]),
+        .pw_weights(block_pw_weights[10]),
+        .pw_bn_w(block_pw_bn_w[10]),
+        .pw_bn_b(block_pw_bn_b[10]),
+        .se_conv1_weights(block_se_conv1_weights[10]),
+        .se_conv1_bn_w(block_se_conv1_bn_w[10]),
+        .se_conv1_bn_b(block_se_conv1_bn_b[10]),
+        .se_conv2_weights(block_se_conv2_weights[10]),
+        .se_conv2_bn_w(block_se_conv2_bn_w[10]),
+        .se_conv2_bn_b(block_se_conv2_bn_b[10]),
+        .shortcut_weights(block_shortcut_weights[10]),
+        .shortcut_bn_w(block_shortcut_bn_w[10]),
+        .shortcut_bn_b(block_shortcut_bn_b[10])
+    );
+
+    // Propagate valid flag through block sequence
+    assign valid_pipe[2] = valid_pipe[1];
+    assign valid_pipe[3] = valid_pipe[2];
+    assign valid_pipe[4] = valid_pipe[3];
+    assign valid_pipe[5] = valid_pipe[4];
+    assign valid_pipe[6] = valid_pipe[5];
+    assign valid_pipe[7] = valid_pipe[6];
+    assign valid_pipe[8] = valid_pipe[7];
+    assign valid_pipe[9] = valid_pipe[8];
+    assign valid_pipe[10] = valid_pipe[9];
+    assign valid_pipe[11] = valid_pipe[10];
+    assign valid_pipe[12] = valid_pipe[11];
     
     // Final convolution (1x1, 96->576)
     PointwiseConv2D #(
@@ -436,15 +717,108 @@ module MobileNetV3_Small #(
         .pipeline_stage(conv2_stage)
     );
 
-    // Continue with remaining layers...
-    // BatchNorm2d for conv2, hswish activation, global average pooling, linear layers
-    
-    // SIMPLIFIED: Final pipeline assignments
-    assign valid_out = valid_pipe[15];
+    // BatchNorm, activation and pooling after conv2
+    BatchNorm2d #(
+        .NUM_FEATURES(576), .DATA_WIDTH(DATA_WIDTH), .FRAC_BITS(FRAC_BITS),
+        .HEIGHT(7), .WIDTH(7)
+    ) conv2_bn (
+        .clk(clk), .rst(rst),
+        .data_in(conv2_out),
+        .data_out(conv2_bn_out),
+        .effective_weight(conv2_bn_w),
+        .effective_bias(conv2_bn_b),
+        .valid_in(valid_pipe[13]),
+        .valid_out(valid_pipe[14])
+    );
+
+    // hswish activation
+    genvar h2, w2, c2;
+    generate
+        for (h2 = 0; h2 < 7; h2++) begin : conv2_h_loop
+            for (w2 = 0; w2 < 7; w2++) begin : conv2_w_loop
+                for (c2 = 0; c2 < 576; c2++) begin : conv2_c_loop
+                    hswish #(.DATA_WIDTH(DATA_WIDTH), .FRAC_BITS(FRAC_BITS)) act_inst (
+                        .clk(clk), .rst(rst),
+                        .data_in(conv2_bn_out[h2][w2][c2]),
+                        .data_out(conv2_act_out[h2][w2][c2]),
+                        .valid_in(valid_pipe[14]), .valid_out()
+                    );
+                end
+            end
+        end
+    endgenerate
+
+    // Global average pooling 7x7 -> 1x1
+    AvgPool2d #(
+        .KERNEL_SIZE(7), .IN_CHANNELS(576), .IN_HEIGHT(7), .IN_WIDTH(7),
+        .DATA_WIDTH(DATA_WIDTH), .FRAC_BITS(FRAC_BITS)
+    ) gap (
+        .clk(clk), .rst(rst),
+        .data_in(conv2_act_out),
+        .data_out(pool_out),
+        .valid_in(valid_pipe[14]),
+        .valid_out(valid_pipe[15]),
+        .ready_out(ready_pipe[14]),
+        .pipeline_stage(pool_stage)
+    );
+
+    // Linear 3 layer 576 -> 1280
+    Linear #(
+        .IN_FEATURES(576), .OUT_FEATURES(1280),
+        .DATA_WIDTH(DATA_WIDTH), .FRAC_BITS(FRAC_BITS)
+    ) linear3 (
+        .clk(clk), .rst(rst),
+        .data_in(pool_out),
+        .data_out(linear3_out),
+        .weights(linear3_weights),
+        .bias(linear3_bias),
+        .valid_in(valid_pipe[15]),
+        .valid_out(valid_pipe[16]),
+        .ready_out(ready_pipe[15]),
+        .pipeline_stage(linear3_stage)
+    );
+
+    BatchNorm1d #(
+        .NUM_FEATURES(1280), .DATA_WIDTH(DATA_WIDTH), .FRAC_BITS(FRAC_BITS)
+    ) linear3_bn (
+        .clk(clk), .rst(rst),
+        .data_in(linear3_out),
+        .data_out(linear3_bn_out),
+        .effective_weight(linear3_bn_w),
+        .effective_bias(linear3_bn_b),
+        .valid_in(valid_pipe[16]),
+        .valid_out(valid_pipe[17])
+    );
+
+    generate
+        for (genvar fc = 0; fc < 1280; fc++) begin : linear3_act_loop
+            hswish #(.DATA_WIDTH(DATA_WIDTH), .FRAC_BITS(FRAC_BITS)) hsw3 (
+                .clk(clk), .rst(rst),
+                .data_in(linear3_bn_out[fc]),
+                .data_out(linear3_act_out[fc]),
+                .valid_in(valid_pipe[17]), .valid_out()
+            );
+        end
+    endgenerate
+
+    // Linear 4 layer 1280 -> NUM_CLASSES
+    Linear #(
+        .IN_FEATURES(1280), .OUT_FEATURES(NUM_CLASSES),
+        .DATA_WIDTH(DATA_WIDTH), .FRAC_BITS(FRAC_BITS)
+    ) linear4 (
+        .clk(clk), .rst(rst),
+        .data_in(linear3_act_out),
+        .data_out(data_out),
+        .weights(linear4_weights),
+        .bias(linear4_bias),
+        .valid_in(valid_pipe[17]),
+        .valid_out(valid_pipe[18]),
+        .ready_out(ready_pipe[16]),
+        .pipeline_stage(linear4_stage)
+    );
+
+    assign valid_out = valid_pipe[18];
     assign ready_out = ready_pipe[0];
-    
-    // SIMPLIFIED: Output assignment (in full implementation, this comes from linear4)
-    assign data_out = linear3_act_out[0:NUM_CLASSES-1];
 
 endmodule
 
