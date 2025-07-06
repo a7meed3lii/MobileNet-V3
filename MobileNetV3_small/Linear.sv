@@ -115,8 +115,10 @@ module Linear #(
             if (valid_pipe[1]) begin
                 for (int i = 0; i < OUT_FEATURES; i++) begin
                     // Apply FRAC_BITS shift before saturation
+
                     logic signed [ACC_WIDTH-1:0] result;
                     logic signed [ACC_WIDTH-FRAC_BITS:0] scaled_result;
+
                     result = biased_accumulator[i];
                     scaled_result = result >>> FRAC_BITS;
 
